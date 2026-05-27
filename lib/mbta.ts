@@ -25,7 +25,7 @@ export async function searchStops(query: string): Promise<Stop[]> {
 
   // Fetch parent stations for subway, light rail, commuter rail — small dataset, cache 1 hour
   const data = await mbtaFetch(
-    '/stops?filter[location_type]=1&filter[route_type]=0,1,2&page[limit]=500&fields[stop]=name,latitude,longitude',
+    '/stops?filter[location_type]=1&page[limit]=500&fields[stop]=name,latitude,longitude',
     3600
   );
 
