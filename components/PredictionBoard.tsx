@@ -1,6 +1,5 @@
 import type { StopPredictions, Prediction, Alert } from '@/lib/types';
-
-const STOPS_SERVICE = new Set(['SUSPENSION', 'NO_SERVICE', 'SHUTTLE']);
+import { STOPS_SERVICE, alertsForCard } from '@/lib/alerts';
 
 function formatArrival(departureTime: string | null, arrivalTime: string | null): string {
   const iso = departureTime ?? arrivalTime;
@@ -70,14 +69,6 @@ function AlertRow({ alert }: { alert: Alert }) {
       <span className="mt-0.5 flex-shrink-0">⚠</span>
       <span>{alert.header}</span>
     </div>
-  );
-}
-
-function alertsForCard(routeAlerts: Alert[], routeId: string, directionId: 0 | 1): Alert[] {
-  return routeAlerts.filter(
-    (a) =>
-      a.routeIds.includes(routeId) &&
-      (a.directionId === null || a.directionId === directionId)
   );
 }
 
