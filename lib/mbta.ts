@@ -1,4 +1,34 @@
-import type { Stop, Prediction, Route, DirectionGroup, StopPredictions } from './types';
+import type { Stop, Prediction, Route, DirectionGroup, Alert, StopPredictions } from './types';
+
+const SERVICE_IMPACTING_EFFECTS = new Set([
+  'SUSPENSION', 'NO_SERVICE', 'SIGNIFICANT_DELAYS', 'STOP_CLOSURE',
+  'SHUTTLE', 'DETOUR', 'REDUCED_SERVICE', 'DELAY', 'SERVICE_CHANGE', 'MODIFIED_SERVICE',
+]);
+
+function parseAlerts(data: any): Alert[] {
+  const alerts: Alert[] = [];
+  for (const a of (data.data as any[])) {
+    const effect: string = a.attributes.effect ?? '';
+    if (!SERVICE_IMPACTING_EFFECTS.has(effect)) continue;
+
+    const entities: any[] = a.attributes.informed_entity ?? [];
+    const routeIds = [...new Set<string>(entities.map((e: any) => e.route).filter(Boolean))];
+    const stopIds = [...new Set<string>(entities.map((e: any) => e.stop).filter(Boolean))];
+    const rawDirs = [...new Set(entities.map((e: any) => e.direction_id).filter((d: any) => d != null))];
+    const directionId: 0 | 1 | null = rawDirs.length === 1 ? (rawDirs[0] as 0 | 1) : null;
+
+    alerts.push({
+      id: a.id,
+      effect,
+      header: a.attributes.header ?? '',
+      routeIds,
+      directionId,
+      stopIds,
+      isStopScoped: routeIds.length === 0,
+    });
+  }
+  return alerts;
+}
 
 const BASE = 'https://api-v3.mbta.com';
 
@@ -66,12 +96,18 @@ export async function getStop(stopId: string): Promise<Stop | null> {
 }
 
 export async function getStopPredictions(stopId: string): Promise<StopPredictions | null> {
-  const stop = await getStop(stopId);
+  const [stop, predictionsData, alertsData] = await Promise.all([
+    getStop(stopId),
+    mbtaFetch(
+      `/predictions?filter[stop]=${encodeURIComponent(stopId)}&include=route,vehicle&sort=departure_time&page[limit]=60`
+    ),
+    mbtaFetch(
+      `/alerts?filter[stop]=${encodeURIComponent(stopId)}&filter[lifecycle]=NEW,ONGOING,ONGOING_UPCOMING&fields[alert]=effect,header,informed_entity`
+    ),
+  ]);
   if (!stop) return null;
 
-  const data = await mbtaFetch(
-    `/predictions?filter[stop]=${encodeURIComponent(stopId)}&include=route,vehicle&sort=departure_time&page[limit]=60`
-  );
+  const data = predictionsData;
 
   const routes = new Map<string, any>();
   const vehicles = new Map<string, any>();
@@ -172,5 +208,9 @@ export async function getStopPredictions(stopId: string): Promise<StopPrediction
     return a.directionId - b.directionId;
   });
 
-  return { stop, directions };
+  const alerts = parseAlerts(alertsData);
+  const stopAlerts = alerts.filter((a) => a.isStopScoped);
+  const routeAlerts = alerts.filter((a) => !a.isStopScoped);
+
+  return { stop, directions, stopAlerts, routeAlerts };
 }

@@ -42,7 +42,19 @@ export interface DirectionGroup {
   predictions: Prediction[];
 }
 
+export interface Alert {
+  id: string;
+  effect: string;
+  header: string;
+  routeIds: string[];
+  directionId: 0 | 1 | null; // null = affects both directions
+  stopIds: string[];
+  isStopScoped: boolean; // true when routeIds is empty → renders as banner
+}
+
 export interface StopPredictions {
   stop: Stop;
   directions: DirectionGroup[];
+  stopAlerts: Alert[];  // no route in informed_entity → banner above cards
+  routeAlerts: Alert[]; // has route in informed_entity → inline on matching card
 }

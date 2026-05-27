@@ -28,11 +28,15 @@ The app has two interface flavors:
 - `occupancy_status` — crowding level (e.g. `MANY_SEATS_AVAILABLE`, `FEW_SEATS_AVAILABLE`, `FULL`). Only present when the vehicle reports it.
 - `carriages` — list of individual cars on a train, each with its own occupancy. Use carriage count as "number of cars". Only present for multi-car consists (subway, commuter rail).
 
-**Alert** — service notice affecting a route, stop, or trip. Surface alerts that affect the user's stop or route alongside arrival predictions.
+**Alert** — a service-impacting notice affecting a route, stop, or trip. Includes MBTA `effect` values: `SUSPENSION`, `NO_SERVICE`, `SIGNIFICANT_DELAYS`, `STOP_CLOSURE`, `SHUTTLE`, `DETOUR`, `REDUCED_SERVICE`, `DELAY`, `SERVICE_CHANGE`, `MODIFIED_SERVICE`. Excludes facility notices (`ELEVATOR_CLOSURE`, `ESCALATOR_CLOSURE`), informational notices (`NO_EFFECT`, `ADDITIONAL_SERVICE`), and unrelated notices (`PARKING_ISSUE`, `BIKE_ISSUE`, `POLICY_CHANGE`). Only the `header` text is shown — not the full description. Displayed in one of two positions depending on scope:
+- **Route-scoped alert** — inline on the route+direction card it affects, matched by `informed_entity` route ID and, when present, direction_id. An alert with both route IDs and stop IDs in `informed_entity` is treated as route-scoped. Predictions on that card are greyed out only when the alert effect is `SUSPENSION`, `NO_SERVICE`, or `SHUTTLE`; all other alert types show predictions at full opacity. All matching alerts are shown — no cap per card.
+- **Stop-scoped alert** — a single banner between the station name and the route cards; not repeated per card. Only used when `informed_entity` contains no route IDs at all.
 
 **Nearest stop** — the stop with the shortest straight-line distance to the user's reported location, filtered to a relevant mode or route when the user specifies one. Ties broken by distance; present the closest match.
 
 **User location** — in the initial build, location is supplied manually (typed address, stop name, or coordinates). Automatic device geolocation (browser Geolocation API, iOS/Android location sharing) is a planned future enhancement — design data flows so the location source is swappable without restructuring the rest of the app.
+
+**Station search vs. geolocation bus coverage** — searching by station name finds MBTA parent stations (`location_type=1`). Bus stops that the MBTA has linked as children of a parent station (e.g. Andrew's busway) appear in predictions; bus stops that are standalone (not children of a parent station) do not. This is intentional for the name-search MVP. When geolocation is added, use `GET /stops?filter[latitude]=&filter[longitude]=&filter[radius]=` which returns all stops near the user regardless of parent-child structure, giving full bus coverage.
 
 **Conversational interface** — the messaging-bot flavor of the app. User sends location (and optionally a direction or route preference); bot replies in plain language. Keep replies concise — one arrival per direction, occupancy note if crowded, alert summary if active.
 
