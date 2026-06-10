@@ -139,6 +139,9 @@ export async function getStopPredictions(stopId: string): Promise<StopPrediction
       const carriages = vehicleData.attributes.carriages;
       if (Array.isArray(carriages) && carriages.length > 0) {
         prediction.carCount = carriages.length;
+        prediction.carriageOccupancy = carriages.map(
+          (c: any) => c.occupancy_status ?? 'NO_DATA_AVAILABLE'
+        );
       }
     }
 

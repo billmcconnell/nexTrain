@@ -11,23 +11,38 @@ function formatArrival(departureTime: string | null, arrivalTime: string | null)
   return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-const OCCUPANCY_CONFIG: Record<string, { label: string; color: string }> = {
-  MANY_SEATS_AVAILABLE: { label: 'Seats available', color: 'bg-green-500' },
-  FEW_SEATS_AVAILABLE: { label: 'Few seats', color: 'bg-yellow-400' },
-  STANDING_ROOM_ONLY: { label: 'Standing only', color: 'bg-orange-400' },
-  CRUSHED_STANDING_ROOM_ONLY: { label: 'Very crowded', color: 'bg-red-500' },
-  FULL: { label: 'Full', color: 'bg-red-600' },
+const CAR_DOT_COLOR: Record<string, string> = {
+  MANY_SEATS_AVAILABLE: 'bg-green-500',
+  FEW_SEATS_AVAILABLE: 'bg-yellow-400',
+  STANDING_ROOM_ONLY: 'bg-orange-400',
 };
 
-function OccupancyDot({ status }: { status?: string }) {
-  if (!status || status === 'NO_DATA') return null;
-  const config = OCCUPANCY_CONFIG[status];
-  if (!config) return null;
+const CAR_DOT_LABEL: Record<string, string> = {
+  MANY_SEATS_AVAILABLE: 'Seats available',
+  FEW_SEATS_AVAILABLE: 'Few seats',
+  STANDING_ROOM_ONLY: 'Standing room only',
+};
+
+function CarOccupancyDots({ occupancy }: { occupancy: string[] }) {
   return (
-    <span
-      className={`inline-block h-2.5 w-2.5 rounded-full ${config.color} flex-shrink-0`}
-      title={config.label}
-    />
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {occupancy.map((status, i) => {
+        const color = CAR_DOT_COLOR[status];
+        return color ? (
+          <span
+            key={i}
+            className={`inline-block h-3 w-3 rounded-full flex-shrink-0 ${color}`}
+            title={CAR_DOT_LABEL[status]}
+          />
+        ) : (
+          <span
+            key={i}
+            className="inline-block h-3 w-3 rounded-full flex-shrink-0 border border-zinc-600"
+            title="No data"
+          />
+        );
+      })}
+    </div>
   );
 }
 
@@ -38,16 +53,19 @@ function PredictionRow({ prediction, dimmed }: { prediction: Prediction; dimmed:
   return (
     <div className={`flex items-center gap-3 py-2 ${dimmed ? 'opacity-40' : ''}`}>
       <span
-        className={`w-16 text-right font-mono font-semibold tabular-nums text-sm ${
+        className={`w-16 text-right font-mono font-semibold tabular-nums text-sm flex-shrink-0 ${
           isDue ? 'text-amber-400' : 'text-white'
         }`}
       >
         {time}
       </span>
-      <OccupancyDot status={prediction.occupancyStatus} />
-      {prediction.carCount != null && prediction.route.type !== 3 && (
+      {prediction.carriageOccupancy && prediction.carriageOccupancy.length > 0 ? (
+        <CarOccupancyDots occupancy={prediction.carriageOccupancy} />
+      ) : prediction.occupancyStatus ? (
+        <CarOccupancyDots occupancy={[prediction.occupancyStatus]} />
+      ) : prediction.carCount != null && prediction.route.type !== 3 ? (
         <span className="text-zinc-500 text-xs">{prediction.carCount} cars</span>
-      )}
+      ) : null}
     </div>
   );
 }

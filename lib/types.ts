@@ -25,6 +25,7 @@ export interface Prediction {
   route: Route;
   occupancyStatus?: string;
   carCount?: number;
+  carriageOccupancy?: string[];
   tripId: string;
 }
 
