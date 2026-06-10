@@ -5,7 +5,7 @@ function formatArrival(departureTime: string | null, arrivalTime: string | null)
   const iso = departureTime ?? arrivalTime;
   if (!iso) return '—';
   const diffSec = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
-  if (diffSec < 60) return 'Due';
+  if (diffSec < 60) return 'Arriving';
   const diffMin = Math.round(diffSec / 60);
   if (diffMin < 60) return `${diffMin} min`;
   return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
@@ -48,7 +48,7 @@ function CarOccupancyDots({ occupancy }: { occupancy: string[] }) {
 
 function PredictionRow({ prediction, dimmed }: { prediction: Prediction; dimmed: boolean }) {
   const time = formatArrival(prediction.departureTime, prediction.arrivalTime);
-  const isDue = time === 'Due';
+  const isDue = time === 'Arriving';
 
   return (
     <div className={`flex items-center gap-3 py-2 ${dimmed ? 'opacity-40' : ''}`}>
